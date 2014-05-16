@@ -162,9 +162,6 @@ class Trie(
       return false
     }
 
-    val start = Variant(0, 0, this)
-    checkAdd(start)
-
     @tailrec def search(): Unit = 
     {
       if (q.isEmpty == false) {
@@ -174,6 +171,8 @@ class Trie(
       }
     }
 
+    val start = Variant(0, 0, this)
+    checkAdd(start)
     search
   }
 }
