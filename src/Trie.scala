@@ -22,7 +22,7 @@ case class Variant(
     case that: Variant => 
       this.pos == that.pos && 
       (this.node eq that.node)
-      case _ => false
+    case _ => false
   }
 }
 
@@ -48,24 +48,48 @@ class Trie(
   private val childs : TreeMap[Char, Trie] = null,
   private val value : Char = 0x0)
 {
-  def +(s: String) = insert(s, 0)
+  def +(s: String) = {
+    def insert(trie: Trie, s: String, pos: Int = 0) : Trie = 
+      if (s.length() < pos) trie
+      else if (pos == 0 && trie.contains(s)) trie
+      else if (s.length == pos)
+	if (trie.ends) trie
+	else new Trie(true, trie.parent, trie.childs, trie.value)
+	else {
+	  val c = s(pos)
+	  val children = if (trie.childs != null) trie.childs 
+			 else new TreeMap[Char, Trie]()
+	  val child = if (children contains c) children(c) 
+		      else new Trie(s.length() == pos + 1, trie, null, c)
+	  new Trie(trie.ends, trie.parent, 
+		   children + ((c, insert(child, s, pos + 1))), trie.value)
+	}
+
+    insert(this, s, 0)
+  }
 
   /// exact search
-  def contains(s: String) =
-    prefixImpl(this, s, 0) match {
-      case Some(a: Trie) => a.ends
-      case _ => false
-    }
+  def contains(s: String) = {
+    @tailrec def impl(t: Trie, s: String, pos: Int): Boolean =
+      if (s.length < pos) false
+      else if (s.length == pos) true
+      else if (t.childs == null) false
+      else if (t.childs.contains(s(pos)) == false) false
+      else impl(t.childs(s(pos)), s, pos + 1)
+
+    impl(this, s, 0)
+  }
 
   def makeString() : String = 
   {
-    var sb = new StringBuilder()
-    var t = this
-    while (t != null && t.parent != null) {
-      sb.append(t.value)
-      t = t.parent
-    }
-    return sb.result().reverse.toString()
+    @tailrec def helper(t: Trie, sb: StringBuilder): String =
+      if (t == null || t.parent == null) sb.result.reverse
+      else {
+	sb += t.value
+	helper(t.parent, sb)
+      }
+
+    helper(this, new StringBuilder)
   }
 
   /// nearest search with Levenstein metric; breaks if "consume" is false
@@ -133,41 +157,25 @@ class Trie(
       return false
     }
 
-    var q = PriorityQueue[Variant]()(VariantOrder)
-    var cache = HashSet[Variant]()
+    val q = PriorityQueue[Variant]()(VariantOrder)
+    val cache = HashSet[Variant]()
     val start = Variant(0, 0, this)
     q += start
 
-    while (q.size != 0) {
-      val best = q.dequeue()
+    @tailrec def search(): Unit = 
+    {
+      if (q.isEmpty == false) {
+	val best = q.dequeue()
 
-      if (indeep(str, best, consume, cache, q))
-	return
-
-      cache += best
+	if (!indeep(str, best, consume, cache, q)) {
+	  cache += best
+	  search
+	}
+      }
     }
+
+    search
   }
-
-  private def prefixImpl(t: Trie, s: String, pos: Int): Option[Trie] =
-    if (s.length < pos) None
-    else if (s.length == pos) Some(t)
-    else if (t.childs == null) None
-    else if (t.childs.contains(s(pos)) == false) None
-    else prefixImpl(t.childs(s(pos)), s, pos + 1)
-
-  private def insert(s: String, pos: Int = 0) : Trie = 
-    if (s.length() < pos) this
-    else if (contains(s)) this
-    else if (s.length() == pos)
-	if (ends) this
-	else new Trie(true, parent, childs, value)
-    else {
-      val c = s(pos)
-      val children = if (childs != null) childs else new TreeMap[Char, Trie]()
-      val child = if (children contains c) children(c) 
-		  else new Trie(s.length() == pos + 1, this, null, c)
-      new Trie(ends, parent, children + ((c, child.insert(s, pos + 1))), value)
-    }
 }
 
 object Trie {

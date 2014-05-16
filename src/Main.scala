@@ -44,8 +44,12 @@ object Program {
 
   def main(args: Array[String]) {
     if (args.length < 1) throw new scala.RuntimeException("specify dictionary file")
+    println("Loading dictionary ...")
+
     val dictionary = Trie(
       scala.io.Source.fromFile(args(0), "UTF-8").getLines)
+
+    println("Dictionary loaded.")
 
     val bossGroup = new NioEventLoopGroup(1)
     val ioGroup = new NioEventLoopGroup(4)

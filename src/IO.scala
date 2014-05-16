@@ -91,9 +91,7 @@ extends ChannelHandlerAdapter
       ctx.write(r)
       ctx.flush()
     }
-    case obj @ _ => { 
-      println("Received unexpected object: " + obj.toString) 
-    }
+    case obj @ _ => { }
   }
 
   override def exceptionCaught(ctx: ChannelHandlerContext, t: Throwable) =
