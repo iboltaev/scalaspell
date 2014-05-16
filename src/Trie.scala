@@ -1,7 +1,7 @@
 // nnsearch.collections.immutable
 package nnsearch.collections.immutable {
 
-import scala.annotation.tailrec;
+import scala.annotation.tailrec
 
 import scala.collection.immutable.TreeMap
 
@@ -48,7 +48,7 @@ class Trie(
   private val childs : TreeMap[Char, Trie] = null,
   private val value : Char = 0x0)
 {
-  def +(s: String) = insert(s, 0);
+  def +(s: String) = insert(s, 0)
 
   /// exact search
   def contains(s: String) =
@@ -59,11 +59,11 @@ class Trie(
 
   def makeString() : String = 
   {
-    var sb = new StringBuilder();
+    var sb = new StringBuilder()
     var t = this
     while (t != null && t.parent != null) {
-      sb.append(t.value);
-      t = t.parent;
+      sb.append(t.value)
+      t = t.parent
     }
     return sb.result().reverse.toString()
   }
@@ -90,6 +90,7 @@ class Trie(
 			 
 			 best.pos + 1,
 			 child)
+
 	  // pass symbol
 	  q += Variant(best.penalty + 1, best.pos, child)
 	}
@@ -105,43 +106,47 @@ class Trie(
       if (variant.node == null || 
 	  toFind.length < variant.pos ||
 	  cache.contains(variant))
-	return false;
+	return false
 
       if (!consume(toFind, variant))
-	return true;
+	return true
 
-      cache += variant;
+      cache += variant
 
-      if (toFind.length <= variant.pos)
-	return false;
+      if (toFind.length < variant.pos)
+	return false
+      else if (toFind.length == variant.pos) {
+	genvars(toFind, variant, queue)
+	return false
+      }
 
-      val c = toFind(variant.pos);
+      val c = toFind(variant.pos)
       if (variant.node.childs != null &&
 	  variant.node.childs.contains(c)) 
       {
 	val v = Variant(variant.penalty, variant.pos + 1,
-			variant.node.childs(c));
+			variant.node.childs(c))
 	if (indeep(toFind, v, consume, cache, queue))
-	  return true;
+	  return true
       }
 
-      genvars(toFind, variant, queue);
+      genvars(toFind, variant, queue)
 
-      return false;
+      return false
     }
 
     var q = PriorityQueue[Variant]()(VariantOrder)
     var cache = HashSet[Variant]()
     val start = Variant(0, 0, this)
-    q += start;
+    q += start
 
     while (q.size != 0) {
       val best = q.dequeue()
 
       if (indeep(str, best, consume, cache, q))
-	return;
+	return
 
-      cache += best;
+      cache += best
     }
   }
 
@@ -183,7 +188,7 @@ package unittest {
 
   class NearestSearchSpec extends FlatSpec with Matchers {
     "A trie" should "be capable of precise searching" in {
-      val trie = immutable.Trie(Seq("111", "1111", "222", "333"));
+      val trie = immutable.Trie(Seq("111", "1111", "222", "333"))
       trie contains "111" should be (true)
       trie contains "1111" should be (true)
       trie contains "222" should be (true)
@@ -192,7 +197,7 @@ package unittest {
     }
 
     it should "be capable of impresize search" in {
-      val trie = immutable.Trie(Seq("111", "1111", "222", "333"));
+      val trie = immutable.Trie(Seq("111", "1111", "222", "333"))
       NearestSearch(trie, "111") should be (Seq(("111", 0)))
       NearestSearch(trie, "121") should be (Seq(("111", 1)))
       NearestSearch(trie, "122") should be (Seq(("222", 1)))
@@ -219,6 +224,12 @@ package unittest {
       val trie = immutable.Trie(Seq("111", "1111", "222", "333"))
       NearestSearch.dNearest(trie, "112", 2) should equal (Seq(("111", 1)))
       NearestSearch.dNearest(trie, "112", 3) should contain theSameElementsAs Seq(("111", 1), ("222", 2), ("1111", 2))
+    }
+
+    it should "correctly process bug with end position insertion" in {
+      val trie = immutable.Trie(
+	Seq("sacrifice", "sacrificed", "sacrifices"))
+      NearestSearch.dNearest(trie, "sacrifice", 2) should contain theSameElementsAs Seq(("sacrifice", 0), ("sacrificed", 1), ("sacrifices", 1))
     }
   }
 }
