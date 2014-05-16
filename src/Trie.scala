@@ -20,8 +20,8 @@ case class Variant(
   override def hashCode() : Int = pos ^ node.hashCode()
   override def equals(v: Any) : Boolean = v match {
     case that: Variant => 
-      this.pos == that.pos && 
-      (this.node eq that.node)
+      pos == that.pos && 
+      (node eq that.node)
     case _ => false
   }
 }
@@ -97,48 +97,53 @@ class Trie(
     str: String,
     consume : (String, Variant) => Boolean): Unit = 
   {
-    def genvars(str: String,
-	      best: Variant,
-	      q: PriorityQueue[Variant]) = 
+    val q = PriorityQueue[Variant]()(VariantOrder)
+    val cache = HashSet[Variant]()
+    val processed = HashSet[Variant]()
+
+    def checkAdd(v: Variant) = {
+      if (cache.contains(v) == false) {
+	cache += v
+	q += v
+      }
+    }
+
+    def genvars(str: String, best: Variant) = 
     {
       // eat symbol
       if (best.pos != str.length)
-	q += Variant(best.penalty + 1, best.pos + 1, best.node)
+	checkAdd(Variant(best.penalty + 1, best.pos + 1, best.node))
 
       if (best.node.childs != null) {
 	for ((key, child) <- best.node.childs) {
 	  // symbol replacement
-	  if (best.pos != str.length)
-	    q += Variant(if (str(best.pos) == key) best.penalty 
-			 else best.penalty + 1,
-			 
+	  if (best.pos != str.length && str(best.pos) != key)
+	    checkAdd(Variant(best.penalty + 1,
 			 best.pos + 1,
-			 child)
+			 child))
 
 	  // pass symbol
-	  q += Variant(best.penalty + 1, best.pos, child)
+	  checkAdd(Variant(best.penalty + 1, best.pos, child))
 	}
       }
     }
 
     def indeep(toFind: String,
 	       variant: Variant,
-	       consume: (String, Variant) => Boolean,
-	       cache: HashSet[Variant],
-	       queue: PriorityQueue[Variant]): Boolean = 
+	       consume: (String, Variant) => Boolean): Boolean = 
     {
       if (variant.node == null || 
 	  toFind.length < variant.pos ||
-	  cache.contains(variant))
+	  {processed contains variant})
 	return false
+
+      processed += variant
 
       if (!consume(toFind, variant))
 	return true
 
-      cache += variant
-
       if (toFind.length == variant.pos) {
-	genvars(toFind, variant, queue)
+	genvars(toFind, variant)
 	return false
       }
 
@@ -148,29 +153,24 @@ class Trie(
       {
 	val v = Variant(variant.penalty, variant.pos + 1,
 			variant.node.childs(c))
-	if (indeep(toFind, v, consume, cache, queue))
+	if (indeep(toFind, v, consume))
 	  return true
       }
 
-      genvars(toFind, variant, queue)
+      genvars(toFind, variant)
 
       return false
     }
 
-    val q = PriorityQueue[Variant]()(VariantOrder)
-    val cache = HashSet[Variant]()
     val start = Variant(0, 0, this)
-    q += start
+    checkAdd(start)
 
     @tailrec def search(): Unit = 
     {
       if (q.isEmpty == false) {
 	val best = q.dequeue()
-
-	if (!indeep(str, best, consume, cache, q)) {
-	  cache += best
+	if (!indeep(str, best, consume))
 	  search
-	}
       }
     }
 
