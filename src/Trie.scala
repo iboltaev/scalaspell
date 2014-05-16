@@ -113,9 +113,7 @@ class Trie(
 
       cache += variant
 
-      if (toFind.length < variant.pos)
-	return false
-      else if (toFind.length == variant.pos) {
+      if (toFind.length == variant.pos) {
 	genvars(toFind, variant, queue)
 	return false
       }
