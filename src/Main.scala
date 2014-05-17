@@ -26,18 +26,12 @@ object Program {
       (seq: Seq[Corrector.Word]) => Serializer.toXml(seq).toString
     else (seq: Seq[Corrector.Word]) => Serializer.toJson(seq)
 
-  def searcher(method: nnsearch.SearchMethod) = method match {
-    case SearchMethod(SearchType.KNearest, k) => new NearestSearch.K(k)
-    case SearchMethod(SearchType.DNearest, d) => new NearestSearch.Delta(d)
-    case _ => new NearestSearch.K(1)
-  }
-
   def processor(
-    method: nnsearch.SearchMethod,
+    method: nnsearch.NearestSearch.Searcher,
     format: nnsearch.serialization.FormatEnum.Value) = 
   {
     (dictionary: Trie, toFind: String) => serializer(format)(
-      NearestSearch(dictionary, toFind, searcher(method)) map {
+      NearestSearch(dictionary, toFind, method) map {
 	(pair: (String, Int)) => Corrector.correct(toFind, pair._1)
       })
   }

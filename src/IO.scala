@@ -11,7 +11,7 @@ import nnsearch._
 
 // nnsearch.io
 package nnsearch.io {
-import nnsearch.serialization._
+import nnsearch.serialization.FormatEnum
 
 import java.net.URLDecoder
 
@@ -44,7 +44,7 @@ object Url {
 class SpellCheckIO(
   compute: (
     String, 
-    nnsearch.SearchMethod, 
+    nnsearch.NearestSearch.Searcher, 
     FormatEnum.Value) => String)
 extends ChannelHandlerAdapter 
 {
@@ -70,12 +70,12 @@ extends ChannelHandlerAdapter
 	else FormatEnum.xml
 
       val response = 
-	if (toFind.isEmpty) 
-	  ""
-	else compute(toFind, 
-		     nnsearch.SearchMethod.fromString(
-		       request.vars.get("find").getOrElse("")),
-		       format)
+	if (toFind.isEmpty) ""
+	else compute(
+	  toFind, 
+	  nnsearch.SearchParams.searcher(
+	    request.vars.get("find").getOrElse("")),
+	  format)
 
       val r = new DefaultFullHttpResponse(
 	HttpVersion.HTTP_1_1, 
@@ -117,7 +117,7 @@ extends ChannelHandlerAdapter
 }
 
 object SpellCheckIO {
-  def apply(compute: (String, nnsearch.SearchMethod, nnsearch.serialization.FormatEnum.Value) => String) = 
+  def apply(compute: (String, nnsearch.NearestSearch.Searcher, nnsearch.serialization.FormatEnum.Value) => String) = 
     new SpellCheckIO(compute)
 }
 
