@@ -4,10 +4,12 @@ package nnsearch {
 import serialization.Serializer
 import correction.Corrector
 
+/// object represents mapping of url parameters to logic objects
 object SearchParams {
   val kMatch = "(\\d+)".r
   val dMatch = "d(\\d+)".r
 
+  /// get search object by its string representation
   def searcher(s: String) = {
     def intParam(s: String) = {
       val p = s.toInt
@@ -22,9 +24,15 @@ object SearchParams {
     }
   }
 
+  /// get serializer
   def serializer(s: String): Serializer.Serializer =
     if (s == "json") Serializer.toJson
     else Serializer.toXml(_).toString
+
+  /// get content-type
+  def contentType(s: String) =
+    if (s == "json") "application/json"
+    else "application/xml"
 }
 
 
@@ -34,7 +42,6 @@ package unittest {
 import org.scalatest._
 import nnsearch.SearchParams
 import nnsearch.NearestSearch
-import nnsearch.SearchType
 
   class SearchParamsSpec extends FlatSpec with Matchers {
     "SearchParams" should "parse 100500" in {

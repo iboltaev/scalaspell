@@ -45,7 +45,7 @@ class SpellCheckIO(
   compute: (
     String, 
     nnsearch.NearestSearch.Searcher, 
-    FormatEnum.Value) => String)
+    nnsearch.serialization.Serializer.Serializer) => String)
 extends ChannelHandlerAdapter 
 {
   override def channelRead(ctx: ChannelHandlerContext,
@@ -64,28 +64,22 @@ extends ChannelHandlerAdapter
 
       val request = Url(req.getUri)
       val toFind = request.vars.get("check").getOrElse("")
-      val format = 
-	if (request.vars.get("format").getOrElse("") == "json") 
-	  FormatEnum.json
-	else FormatEnum.xml
+      val method = request.vars.get("find").getOrElse("")
+      val format = request.vars.get("format").getOrElse("")
+
+      val searcher = nnsearch.SearchParams.searcher(method)
+      val serializer = nnsearch.SearchParams.serializer(format)
 
       val response = 
 	if (toFind.isEmpty) ""
-	else compute(
-	  toFind, 
-	  nnsearch.SearchParams.searcher(
-	    request.vars.get("find").getOrElse("")),
-	  format)
+	else compute(toFind, searcher, serializer)
 
       val r = new DefaultFullHttpResponse(
 	HttpVersion.HTTP_1_1, 
 	HttpResponseStatus.OK, 
 	Unpooled.copiedBuffer(response, CharsetUtil.UTF_8))
 
-      r.headers().set("Content-Type", 
-		      if (format == FormatEnum.xml) "application/xml"
-		      else "application/json")
-
+      r.headers().set("Content-Type", SearchParams.contentType(format))
       r.headers().set("Content-Length", response.size.toString)
 
       ctx.write(r)
@@ -117,7 +111,10 @@ extends ChannelHandlerAdapter
 }
 
 object SpellCheckIO {
-  def apply(compute: (String, nnsearch.NearestSearch.Searcher, nnsearch.serialization.FormatEnum.Value) => String) = 
+  def apply(
+    compute: (String, 
+	      nnsearch.NearestSearch.Searcher, 
+	      nnsearch.serialization.Serializer.Serializer) => String) = 
     new SpellCheckIO(compute)
 }
 

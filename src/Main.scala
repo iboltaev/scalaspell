@@ -21,16 +21,11 @@ import nnsearch.serialization.Serializer
 import scala.collection.mutable.ArrayBuffer
 
 object Program {
-  def serializer(format: nnsearch.serialization.FormatEnum.Value) =
-    if (format == nnsearch.serialization.FormatEnum.xml) 
-      (seq: Seq[Corrector.Word]) => Serializer.toXml(seq).toString
-    else (seq: Seq[Corrector.Word]) => Serializer.toJson(seq)
-
   def processor(
     method: nnsearch.NearestSearch.Searcher,
-    format: nnsearch.serialization.FormatEnum.Value) = 
+    format: nnsearch.serialization.Serializer.Serializer) = 
   {
-    (dictionary: Trie, toFind: String) => serializer(format)(
+    (dictionary: Trie, toFind: String) => format(
       NearestSearch(dictionary, toFind, method) map {
 	(pair: (String, Int)) => Corrector.correct(toFind, pair._1)
       })
