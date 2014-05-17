@@ -17,6 +17,9 @@ object FormatEnum extends Enumeration {
  * (as recommended by M.Odersky) or implicit conversions + PM instead.
   */
 object Serializer {
+  
+  type Serializer = (Seq[Corrector.Word]) => String
+
   def toXml(obj: Corrector.Word): xml.Elem = <w>{obj map { _ match {
       case Regular(data) => <r>{data}</r>
       case Correction(data) => <c>{data}</c>

@@ -1,8 +1,6 @@
 // nnsearch.correction
 package nnsearch.correction {
 
-import nnsearch.serialization.Serializer
-
 import scala.collection.mutable.ArrayBuffer
 
 /// correction token base class

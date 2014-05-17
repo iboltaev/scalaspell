@@ -23,7 +23,7 @@ object NearestSearch {
   }
 
   /// search for k nearest neighbours
-  class K(k: Int) extends Searcher
+  case class K(k: Int) extends Searcher
   {
     override def take(toFind: String, v: Variant): Boolean = {
       val value = wholeWordMatch(toFind, v).getOrElse("")
@@ -34,7 +34,7 @@ object NearestSearch {
   }
 
   /// search for neighbours in d-radius sphere
-  class Delta(d: Int) extends Searcher
+  case class Delta(d: Int) extends Searcher
   {
     override def take(toFind: String, v: Variant): Boolean = {
       if (v.penalty >= d) return false

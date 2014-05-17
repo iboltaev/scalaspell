@@ -179,7 +179,7 @@ class Trie(
 
 object Trie {
   def apply(seq: Iterator[String]) : Trie = 
-    (new Trie() /: seq.filter(! _.isEmpty))(_ + _)
+    (new Trie /: seq.filter(! _.isEmpty))(_ + _)
 
   def apply(seq: Seq[String]) : Trie = apply(seq.iterator)
 }
