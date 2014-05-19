@@ -8,7 +8,7 @@ where "search_method" is one of ({count of needed nearest corrections}, d{maximu
 and "output_format" is one of (xml, json).
 
 Example: check=amnesa&d=2&format=xml
-Output:
+Output: "
 <ws>
     <w>
         <r>amnes</r>
@@ -16,6 +16,7 @@ Output:
         <r>a</r>
     </w>
 </ws>
+"
 , where "<r>" means "regular", "<c>" - "correction"
 
 Build is (temporarly & poorly) implemented via make. To build, you should correct CLASSPATH make variable.
