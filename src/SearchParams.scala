@@ -7,8 +7,8 @@ import correction.Corrector
 
 /// object represents mapping of url parameters to logic objects
 object SearchParams {
-  val kMatch = "(\\d+)".r
-  val dMatch = "d(\\d+)".r
+  private val kMatch = "(\\d+)".r
+  private val dMatch = "d(\\d+)".r
 
   /// get search object by its string representation
   def searcher(s: String) = {
