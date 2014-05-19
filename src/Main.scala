@@ -16,14 +16,15 @@ package nnsearch {
 import collections.immutable._
 import nnsearch.io.SpellCheckIO
 import nnsearch.correction._
-import nnsearch.serialization.Serializer
+import nnsearch.serialization._
+import nnsearch.search._
 
 import scala.collection.mutable.ArrayBuffer
 
 object Program {
   def processor(
-    method: nnsearch.NearestSearch.Searcher,
-    format: nnsearch.serialization.Serializer.Serializer) = 
+    method: NearestSearch.Searcher,
+    format: Serializer.Serializer) = 
   {
     (dictionary: Trie, toFind: String) => format(
       NearestSearch(dictionary, toFind, method) map {

@@ -117,7 +117,7 @@ object Corrector {
 package unittest {
   import org.scalatest._
   import nnsearch.correction._
-  import nnsearch.NearestSearch
+  import nnsearch.search.NearestSearch
 
   class CorrectionSpec extends FlatSpec with Matchers {
     "A corrector" should "correct empty to non-empty string '' -> 'ab'" in {
