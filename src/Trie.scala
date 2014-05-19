@@ -17,7 +17,10 @@ case class Variant(
   val pos: Int,
   val node: Trie)
 {
-  override def hashCode() : Int = pos ^ node.hashCode()
+  // analogous to C++'s boost::hash_combine
+  override def hashCode() : Int = 
+    pos ^ (node.hashCode() + 0x9e3779b9 + (pos << 6) + (pos >> 2))
+
   override def equals(v: Any) : Boolean = v match {
     case that: Variant => 
       pos == that.pos && 
@@ -80,8 +83,7 @@ class Trie(
     impl(this, s, 0)
   }
 
-  def makeString() : String = 
-  {
+  def makeString() : String = {
     @tailrec def helper(t: Trie, sb: StringBuilder): String =
       if (t == null || t.parent == null) sb.result.reverse
       else {
@@ -108,8 +110,7 @@ class Trie(
       }
     }
 
-    def genvars(str: String, best: Variant) = 
-    {
+    def genvars(str: String, best: Variant) = {
       // eat symbol
       if (best.pos != str.length)
 	checkAdd(Variant(best.penalty + 1, best.pos + 1, best.node))
@@ -162,8 +163,7 @@ class Trie(
       return false
     }
 
-    @tailrec def search(): Unit = 
-    {
+    @tailrec def search(): Unit = {
       if (q.isEmpty == false) {
 	val best = q.dequeue()
 	if (!indeep(str, best, consume))
