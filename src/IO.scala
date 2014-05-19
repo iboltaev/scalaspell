@@ -11,7 +11,7 @@ import nnsearch._
 
 // nnsearch.io
 package nnsearch.io {
-import nnsearch.serialization.FormatEnum
+import nnsearch._
 
 import java.net.URLDecoder
 
@@ -44,8 +44,8 @@ object Url {
 class SpellCheckIO(
   compute: (
     String, 
-    nnsearch.search.NearestSearch.Searcher, 
-    nnsearch.serialization.Serializer.Serializer) => String)
+    search.NearestSearch.Searcher, 
+    serialization.Serializer.Serializer) => String)
 extends ChannelHandlerAdapter 
 {
   override def channelRead(ctx: ChannelHandlerContext,
