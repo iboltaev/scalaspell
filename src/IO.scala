@@ -44,7 +44,7 @@ object Url {
 class SpellCheckIO(
   compute: (
     String, 
-    nnsearch.NearestSearch.Searcher, 
+    nnsearch.search.NearestSearch.Searcher, 
     nnsearch.serialization.Serializer.Serializer) => String)
 extends ChannelHandlerAdapter 
 {
@@ -113,7 +113,7 @@ extends ChannelHandlerAdapter
 object SpellCheckIO {
   def apply(
     compute: (String, 
-	      nnsearch.NearestSearch.Searcher, 
+	      nnsearch.search.NearestSearch.Searcher, 
 	      nnsearch.serialization.Serializer.Serializer) => String) = 
     new SpellCheckIO(compute)
 }
@@ -122,8 +122,6 @@ object SpellCheckIO {
 
 package unittest {
 import org.scalatest._
-import nnsearch.NearestSearch;
-import nnsearch.NearestSearch.K;
 import nnsearch.io._;
 
   class UriSpec extends FlatSpec with Matchers {

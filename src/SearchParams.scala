@@ -1,6 +1,7 @@
 // nnsearch
 package nnsearch {
 
+import search._
 import serialization.Serializer
 import correction.Corrector
 
@@ -41,7 +42,7 @@ object SearchParams {
 package unittest {
 import org.scalatest._
 import nnsearch.SearchParams
-import nnsearch.NearestSearch
+import nnsearch.search.NearestSearch
 
   class SearchParamsSpec extends FlatSpec with Matchers {
     "SearchParams" should "parse 100500" in {
