@@ -7,17 +7,14 @@ import nnsearch.correction._
 
 import scala.collection.mutable.ArrayBuffer
 
-object FormatEnum extends Enumeration {
-  val xml, json = Value
-}
-
 /**
  * Typically, such thing as serialization is made via "Visitor".
  * But the scala way seems to use simple pattern matching
  * (as recommended by M.Odersky) or implicit conversions + PM instead.
   */
 object Serializer {
-  
+
+  /// type of correction word sequence function
   type Serializer = (Seq[Corrector.Word]) => String
 
   def toXml(obj: Corrector.Word): xml.Elem = <w>{obj map { _ match {
