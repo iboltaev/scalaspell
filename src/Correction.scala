@@ -2,6 +2,7 @@
 package nnsearch.correction {
 
 import scala.collection.mutable.ArrayBuffer
+import scala.annotation.tailrec
 
 /// correction token base class
 abstract class Token(data: String)
@@ -30,29 +31,34 @@ object Corrector {
     // memoization cache
     val cache = Array.ofDim[Variant](toCorrect.size, correction.size)
 
-     // computes correction matrix
-    def computeRec(pos1: Int, pos2: Int): Variant = {
-      if (pos1 == -1) return Variant(pos2 - pos1, pos1, pos2)
-      else if (pos2 == -1) return Variant(pos1 - pos2, pos1, pos2)
+    def minimum[T <: Ordered[T]](seq: T*) = {
+      @tailrec def impl(accum: T, s: Seq[T]): T = 
+	if (s.isEmpty) accum
+	else impl(if (s.head < accum) s.head else accum, s.tail)
+
+      impl(seq.head, seq.tail)
+    }
+
+    /// computes correction matrix
+    def matrix(pos1: Int, pos2: Int): Variant =
+      if (pos1 == -1) Variant(pos2 - pos1, pos1, pos2)
+      else if (pos2 == -1) Variant(pos1 - pos2, pos1, pos2)
       else {
-	if (cache(pos1)(pos2) != null) return cache(pos1)(pos2)
-
-	var v = Variant()
-
-	val v1 = computeRec(pos1 - 1, pos2 - 1) + 
-	    (if (toCorrect(pos1) == correction(pos2)) 0; else 1)
+	if (cache(pos1)(pos2) != null) cache(pos1)(pos2)
+	else {
+	  val v1 = matrix(pos1 - 1, pos2 - 1) + 
+	  (if (toCorrect(pos1) == correction(pos2)) 0; else 1)
 	
-	val v2 = computeRec(pos1 - 1, pos2) + 1
-	val v3 = computeRec(pos1, pos2 - 1) + 1
-
-	if (v1 < v2) v = Variant(v1.penalty, pos1 - 1, pos2 - 1)
-	else v = Variant(v2.penalty, pos1 - 1, pos2)
-
-	if (v3 < v) v = Variant(v3.penalty, pos1, pos2 - 1)
-
-	cache(pos1)(pos2) = v
-	return v
-      }
+	  val v2 = matrix(pos1 - 1, pos2) + 1
+	  val v3 = matrix(pos1, pos2 - 1) + 1
+	  
+	  val v = minimum(Variant(v1.penalty, pos1 - 1, pos2 - 1), 
+			  Variant(v2.penalty, pos1 - 1, pos2), 
+			  Variant(v3.penalty, pos1, pos2 - 1))
+	  
+	  cache(pos1)(pos2) = v
+	  v
+	}
     }
 
     /// restores character sequence with correction flags
@@ -84,7 +90,7 @@ object Corrector {
       return buffer.reverse
     }
 
-    val v = computeRec(toCorrect.size - 1, correction.size - 1)
+    val v = matrix(toCorrect.size - 1, correction.size - 1)
     sequentialize(toCorrect.size - 1, correction.size - 1)
   }
 
