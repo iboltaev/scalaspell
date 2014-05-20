@@ -44,7 +44,7 @@ object Url {
 class SpellCheckIO(
   compute: (
     String, 
-    search.NearestSearch.Searcher, 
+    search.NearestSearch.Searcher,
     serialization.Serializer.Serializer) => String)
 extends ChannelHandlerAdapter 
 {
