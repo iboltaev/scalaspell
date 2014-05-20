@@ -29,13 +29,6 @@ case class Variant(
   }
 }
 
-object VariantOrder extends Ordering[Variant] 
-{
-  def compare(v1: Variant, v2: Variant) : Int = 
-    if (v1.penalty == v2.penalty) v1.pos compare v2.pos
-    else v2.penalty compare v1.penalty
-}
-
   /**
  * Just immutable trie (also called prefix tree).
  * Capable of running general impresize search in a dictionary
@@ -99,7 +92,10 @@ class Trie(
     str: String,
     consume : (String, Variant) => Boolean): Unit = 
   {
-    val q = PriorityQueue[Variant]()(VariantOrder)
+    // lower penalty and greater pos first
+    val q = PriorityQueue[Variant]()(Ordering by {
+      (v) => (-v.penalty, v.pos)})
+
     val cache = HashSet[Variant]()
     val processed = HashSet[Variant]()
 
