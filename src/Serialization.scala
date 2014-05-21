@@ -12,19 +12,14 @@ import scala.collection.mutable.ArrayBuffer
  * But the scala way seems to use simple pattern matching
  * (as recommended by M.Odersky) or implicit conversions + PM instead.
   */
-object Serializer {
 
-  /// type of correction word sequence function
-  type Serializer = (Seq[Corrector.Word]) => String
+object WordSerializer {
 
   def toXml(obj: Corrector.Word): xml.Elem = <w>{obj map { _ match {
-      case Regular(data) => <r>{data}</r>
-      case Correction(data) => <c>{data}</c>
+    case Regular(data) => <r>{data}</r>
+    case Correction(data) => <c>{data}</c>
   }}}</w>
-
-  def toXml(seq: Seq[Corrector.Word]): xml.Elem = 
-    <ws>{seq map {toXml(_)}}</ws>
-
+  
   def toJson(seq: Corrector.Word): String = {
     val sb = new StringBuilder
     sb += '{'
@@ -44,12 +39,21 @@ object Serializer {
     sb += '}'
     sb.mkString
   }
+}
+
+object Serializer {
+
+  /// type of correction word sequence function
+  type Serializer = (Seq[Corrector.Word]) => String
+
+  def toXml(seq: Seq[Corrector.Word]): xml.Elem = 
+    <ws>{seq map {WordSerializer.toXml(_)}}</ws>
 
   def toJson(seq: Seq[Corrector.Word]): String = {
     val sb = new StringBuilder
     sb += '['
     for (token <- seq) {
-      sb append {toJson(token)}
+      sb append {WordSerializer.toJson(token)}
       sb += ','
     }
     sb deleteCharAt {sb.size - 1}
@@ -68,7 +72,7 @@ package unittest {
 
   class SerializeSpec extends FlatSpec with Matchers {
     "A Serializer" should "serialize arestant -> dagestan to XML" in {
-      toXml(List(Correction("d"), Regular("a"), 
+      WordSerializer.toXml(List(Correction("d"), Regular("a"), 
 		 Correction("g"), Regular("estan"))) should be (
 	<w><c>d</c><r>a</r><c>g</c><r>estan</r></w>)
     }
@@ -83,7 +87,7 @@ package unittest {
     }
 
     it should "serialize arestant -> dagestan to JSON" in {
-      toJson(List(Correction("d"), Regular("a"), 
+      WordSerializer.toJson(List(Correction("d"), Regular("a"), 
 		 Correction("g"), Regular("estan"))) should be (
 	"{\"c\":\"d\",\"r\":\"a\",\"c\":\"g\",\"r\":\"estan\"}")
     }

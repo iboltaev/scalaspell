@@ -14,7 +14,7 @@ case class Correction(data: String) extends Token(data)
 object Corrector {
 
   /// a corrected word type
-  type Word = List[Token]
+  type Word = Seq[Token]
 
   /// a prefix correction variant
   case class Variant(penalty: Int = -1, pos1: Int = -1, pos2: Int = -1) 
@@ -52,69 +52,57 @@ object Corrector {
 	  val v2 = matrix(pos1 - 1, pos2) + 1
 	  val v3 = matrix(pos1, pos2 - 1) + 1
 	  
-	  val v = minimum(Variant(v1.penalty, pos1 - 1, pos2 - 1), 
-			  Variant(v2.penalty, pos1 - 1, pos2), 
-			  Variant(v3.penalty, pos1, pos2 - 1))
+	  val best = minimum(Variant(v1.penalty, pos1 - 1, pos2 - 1), 
+			     Variant(v2.penalty, pos1 - 1, pos2), 
+			     Variant(v3.penalty, pos1, pos2 - 1))
 	  
-	  cache(pos1)(pos2) = v
-	  v
+	  cache(pos1)(pos2) = best
+	  best
 	}
     }
 
     /// restores character sequence with correction flags
-    def sequentialize(pos1: Int, pos2: Int) : Seq[(Char, Boolean)] = {
-      var p1 = pos1
-      var p2 = pos2
-      val buffer = ArrayBuffer[(Char, Boolean)]()
-      while (p1 != -1 && p2 != -1) {
-	val current = cache(p1)(p2)
-	val ppos1 = current.pos1
-	val ppos2 = current.pos2
-	val color =
-	  if (p1 - ppos1 != p2 - ppos2 || 
-	      toCorrect(p1) != correction(p2)) true
-	  else false
+    @tailrec def sequentialize(pos1: Int, pos2: Int, buf: ArrayBuffer[(Char, Boolean)]) : Seq[(Char, Boolean)] = {
+      if (pos1 == -1 || pos2 == -1) {
+	if (pos2 != -1) {
+	  buf append ((correction(pos2), true))
+	  sequentialize(pos1, pos2 - 1, buf)
+	} else buf.reverse
+      } else {
+	val current = cache(pos1)(pos2)
+	val color = if (pos1 - current.pos1 != pos2 - current.pos2 ||
+		      toCorrect(pos1) != correction(pos2)) true
+		    else false
+	if (pos2 != current.pos2)
+	  buf append ((correction(pos2), color))
 
-	if (ppos2 != p2)
-	  buffer.append((correction(p2), color))
-
-	p1 = ppos1
-	p2 = ppos2
+	sequentialize(current.pos1, current.pos2, buf)
       }
-
-      while (p2 != -1) {
-	buffer.append((correction(p2), true))
-	p2 -= 1
-      }
-
-      return buffer.reverse
     }
 
-    val v = matrix(toCorrect.size - 1, correction.size - 1)
-    sequentialize(toCorrect.size - 1, correction.size - 1)
+    matrix(toCorrect.size - 1, correction.size - 1)
+    sequentialize(
+      toCorrect.size - 1, 
+      correction.size - 1, 
+      ArrayBuffer[(Char, Boolean)]())
   }
 
   /// produces sequence of correction tokens
   def correct(toCorrect: String, correction: String) = {
-    def tokenFromSeq(s: Seq[(Char, Boolean)]): Token =
-      if (s.isEmpty) Regular("")
+    @tailrec def helper(it: Iterator[(Char, Boolean)], accum: ArrayBuffer[Token]): Word = {
+      if (it.isEmpty) accum
       else {
-	val sb = new StringBuilder
-	s.foreach(p => sb.append(p._1))
-	if (s.head._2 == true) Correction(sb.mkString)
-	else Regular(sb.mkString)
-      } 
-
-    def correctImpl(s: Seq[(Char, Boolean)], accum: Word): Word =
-      if (s.isEmpty) accum
-      else {
-	val tail = s.dropWhile(_._2 == s.head._2)
-	val head = s.takeWhile(_._2 == s.head._2)
-	correctImpl(tail, tokenFromSeq(head) :: accum)
+	val head = it.next // can reuse "it"
+	val span = it span { _._2 == head._2 } // not safe to reuse "it"
+	val data = (new StringBuilder().append(head._1) /: span._1)(_ append _._1).mkString
+	accum append { if (head._2 == true) Correction(data)
+		       else Regular(data)}
+	helper(span._2, accum)
       }
+    }
 
     val correctives = compute(toCorrect, correction)
-    correctImpl(correctives, Nil).reverse
+    helper(correctives.iterator, ArrayBuffer[Token]())
   }
 }
 
