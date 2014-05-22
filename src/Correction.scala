@@ -39,7 +39,7 @@ object Corrector {
       impl(seq.head, seq.tail)
     }
 
-    /// computes correction matrix
+    // computes correction matrix
     def matrix(pos1: Int, pos2: Int): Variant =
       if (pos1 == -1) Variant(pos2 - pos1, pos1, pos2)
       else if (pos2 == -1) Variant(pos1 - pos2, pos1, pos2)
@@ -61,7 +61,7 @@ object Corrector {
 	}
     }
 
-    /// restores character sequence with correction flags
+    // restores character sequence with correction flags
     @tailrec def sequentialize(pos1: Int, pos2: Int, buf: ArrayBuffer[(Char, Boolean)]) : Seq[(Char, Boolean)] = {
       if (pos1 == -1 || pos2 == -1) {
 	if (pos2 != -1) {
