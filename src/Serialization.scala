@@ -35,7 +35,7 @@ object WordSerializer {
 	sb append "\"},"
       }
     }
-    sb deleteCharAt {sb.size - 1}
+    if (sb.size > 1) sb deleteCharAt {sb.size - 1}
     sb += ']'
     sb.mkString
   }
@@ -90,6 +90,10 @@ package unittest {
       WordSerializer.toJson(List(Correction("d"), Regular("a"), 
 		 Correction("g"), Regular("estan"))) should be (
 	"[{\"c\":\"d\"},{\"r\":\"a\"},{\"c\":\"g\"},{\"r\":\"estan\"}]")
+    }
+
+    it should "serialize empty word to JSON" in {
+      WordSerializer.toJson(Nil) should be ("[]")
     }
 
     it should "serialize several correction words to JSON" in {
