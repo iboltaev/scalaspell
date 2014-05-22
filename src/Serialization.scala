@@ -22,21 +22,21 @@ object WordSerializer {
   
   def toJson(seq: Corrector.Word): String = {
     val sb = new StringBuilder
-    sb += '{'
+    sb += '['
     for (token <- seq) token match {
       case Regular(data) => {
-	sb append "\"r\":\""
+	sb append "{\"r\":\""
 	sb append data
-	sb append "\","
+	sb append "\"},"
       }
       case Correction(data) => {
-	sb append "\"c\":\""
+	sb append "{\"c\":\""
 	sb append data
-	sb append "\","
+	sb append "\"},"
       }
     }
     sb deleteCharAt {sb.size - 1}
-    sb += '}'
+    sb += ']'
     sb.mkString
   }
 }
@@ -89,7 +89,7 @@ package unittest {
     it should "serialize arestant -> dagestan to JSON" in {
       WordSerializer.toJson(List(Correction("d"), Regular("a"), 
 		 Correction("g"), Regular("estan"))) should be (
-	"{\"c\":\"d\",\"r\":\"a\",\"c\":\"g\",\"r\":\"estan\"}")
+	"[{\"c\":\"d\"},{\"r\":\"a\"},{\"c\":\"g\"},{\"r\":\"estan\"}]")
     }
 
     it should "serialize several correction words to JSON" in {
@@ -97,7 +97,7 @@ package unittest {
       toJson(
 	List(
 	  List(Regular("11"), Correction("2")), 
-	  List(Regular("2"), Correction("3"), Regular("2")))) should be ("[{\"r\":\"11\",\"c\":\"2\"},{\"r\":\"2\",\"c\":\"3\",\"r\":\"2\"}]")
+	  List(Regular("2"), Correction("3"), Regular("2")))) should be ("[[{\"r\":\"11\"},{\"c\":\"2\"}],[{\"r\":\"2\"},{\"c\":\"3\"},{\"r\":\"2\"}]]")
     }
   }
 }
