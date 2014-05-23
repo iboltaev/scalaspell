@@ -1,26 +1,29 @@
 .PHONY: all clean run help
 
+LIBPATH = libs
+LIBS = scalatest_2.10-2.1.3 \
+	netty-all-5.0.0.Alpha1
 # dependencies
-CLASSPATH=../../INSTALL/scalatest_2.10-2.1.3.jar:../../INSTALL/scalautils_2.10-2.1.3.jar:../../INSTALL/netty-5.0.0.Alpha1/jar/all-in-one/netty-all-5.0.0.Alpha1.jar
+CLASSPATH = $(subst $(EMPTY) $(EMPTY),:,$(addprefix $(LIBPATH)/,$(addsuffix .jar,$(LIBS))))
 
 # sources
-SRCS=$(shell find src -name *.scala)
-BINDIR=bin
-DEPDIR=deps
+SRCS = $(shell find src -name *.scala)
+BINDIR = bin
+DEPDIR = deps
 
 # fake binary
-BIN=$(DEPDIR)/build.dep
+BIN = $(DEPDIR)/build.dep
 
 # main program class
-CLASS=nnsearch.Program
+CLASS = nnsearch.Program
 # namespace of unit tests
-TESTNS=unittest
+TESTNS = unittest
 
 # let's try to find names of specifications we have
-SPECS=$(shell grep -r -i -P "class\s+((\w|\d)+)\s+extends\s+FlatSpec" src | awk '{ print $$3}')
+SPECS = $(shell grep -r -i -P "class\s+((\w|\d)+)\s+extends\s+FlatSpec" src | awk '{ print $$3}')
 
 # names of unit test classes
-TESTCLASS=$(addprefix $(TESTNS).,$(SPECS))
+TESTCLASS = $(addprefix $(TESTNS).,$(SPECS))
 
 all: help $(BIN)
 	@echo "Running all test specifications we have ...."
