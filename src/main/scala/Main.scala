@@ -10,7 +10,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel
 
 import io.netty.handler.codec.http._
 
-// nnsearch
 package nnsearch {
 
 import collections.immutable._
