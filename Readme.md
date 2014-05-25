@@ -1,9 +1,9 @@
 Scalaspell
 
-Scalaspell is simple spelling corrector server, written on scala.
+Scalaspell is a simple spelling correction server, written in scala.
 Correction search algorithm is dictionary-based, with fast nearest search lookup.
 It uses Netty to handle requests and scalatest for unit testing.
-Results can be viewed in xml xml or json formats.
+Results can be viewed in xml or json formats.
 
 To start server, type "./run.sh" .
 After this, server is available on 3535 port.
