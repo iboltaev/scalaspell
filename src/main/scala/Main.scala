@@ -31,12 +31,18 @@ object Program {
       })
   }
 
-  def main(args: Array[String]) {
-    if (args.length < 1) throw new scala.RuntimeException("specify dictionary file")
+  def usage() = println("sbt \"run [dictionary_file] [port_number]\"")
+
+  def parameters(args: Array[String]) : Option[(String, Int)] = {
+    if (args.length < 2) None
+    else Some(((args(0), args(1).toInt)))
+  }
+
+  def run(dictionaryFile: String, port: Int) = {
     println("Loading dictionary ...")
 
     val dictionary = Trie(
-      scala.io.Source.fromFile(args(0), "UTF-8").getLines)
+      scala.io.Source.fromFile(dictionaryFile, "UTF-8").getLines)
 
     println("Dictionary loaded.")
 
@@ -61,11 +67,16 @@ object Program {
       })
 
     try {
-      val future = bs.bind(3535).sync()
+      val future = bs.bind(port).sync()
       future.channel().closeFuture().sync()
     } catch {
       case ex: Any => println("error: " + ex.toString)
     }
+  }
+
+  def main(args: Array[String]): Unit = parameters(args) match {
+    case Some((fileName, port)) => run(fileName, port)
+    case _ => usage()
   }
 }
 

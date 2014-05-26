@@ -7,8 +7,6 @@ import io.netty.handler.codec.http._
 
 import io.netty.util.CharsetUtil
 
-import nnsearch._
-
 // nnsearch.io
 package nnsearch.io {
 import nnsearch._
