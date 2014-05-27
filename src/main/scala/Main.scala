@@ -27,7 +27,7 @@ object Program {
   {
     (dictionary: Trie, toFind: String) => format(
       NearestSearch(dictionary, toFind, method) map {
-	(pair: (String, Int)) => Corrector.correct(toFind, pair._1)
+	(pair: (String, Int)) => Corrector.correct(toFind, pair._1, pair._2)
       })
   }
 

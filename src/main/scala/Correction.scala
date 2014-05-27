@@ -14,7 +14,9 @@ case class Correction(data: String) extends Token(data)
 object Corrector {
 
   /// a corrected word type
-  type Word = Seq[Token]
+  type TokenSeq = Seq[Token]
+  /// corrected type + error count
+  case class Word(word: TokenSeq, errorCount: Int)
 
   /// a prefix correction variant
   case class Variant(penalty: Int = -1, pos1: Int = -1, pos2: Int = -1) 
@@ -89,7 +91,7 @@ object Corrector {
 
   /// produces sequence of correction tokens
   def correct(toCorrect: String, correction: String) = {
-    @tailrec def helper(it: Iterator[(Char, Boolean)], accum: ArrayBuffer[Token]): Word = {
+    @tailrec def helper(it: Iterator[(Char, Boolean)], accum: ArrayBuffer[Token]): TokenSeq = {
       if (it.isEmpty) accum
       else {
 	val head = it.next // can reuse "it"
@@ -104,6 +106,9 @@ object Corrector {
     val correctives = compute(toCorrect, correction)
     helper(correctives.iterator, ArrayBuffer[Token]())
   }
+
+  def correct(toCorrect: String, correction: String, errorCount: Int)
+  : Word = Word(correct(toCorrect, correction), errorCount)
 }
 
 } // !nnsearch.correction

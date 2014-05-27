@@ -15,15 +15,16 @@ import scala.collection.mutable.ArrayBuffer
 
 object WordSerializer {
 
-  def toXml(obj: Corrector.Word): xml.Elem = <w>{obj map { _ match {
-    case Regular(data) => <r>{data}</r>
-    case Correction(data) => <c>{data}</c>
-  }}}</w>
+  def toXml(obj: Corrector.Word): xml.Elem = 
+    <wc><w>{obj.word map { _ match {
+      case Regular(data) => <r>{data}</r>
+      case Correction(data) => <c>{data}</c>
+    }}}</w><ec>{obj.errorCount}</ec></wc>
   
-  def toJson(seq: Corrector.Word): String = {
+  def toJson(word: Corrector.Word): String = {
     val sb = new StringBuilder
-    sb += '['
-    for (token <- seq) token match {
+    sb append "{["
+    for (token <- word.word) token match {
       case Regular(data) => {
 	sb append "{\"r\":\""
 	sb append data
@@ -35,8 +36,10 @@ object WordSerializer {
 	sb append "\"},"
       }
     }
-    if (sb.size > 1) sb deleteCharAt {sb.size - 1}
-    sb += ']'
+    if (sb.size > 2) sb deleteCharAt {sb.size - 1}
+    sb append "],\"ec\":"
+    sb append word.errorCount.toString
+    sb append "}"
     sb.mkString
   }
 }
