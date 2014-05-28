@@ -50,16 +50,22 @@ extends ChannelHandlerAdapter
 			   msg: Any): Unit = msg match
   {
     case req: HttpRequest => {
-      if (req.getMethod() != HttpMethod.GET) {
-	send400(ctx, "Unsupported method")
-	return
-      }
+      processor(req)(ctx)
+    }
+    case _ => { }
+  }
 
-      if (req.headers().contains("Expect", "100-Continue", true)) {
-	process100Continue(ctx)
-	return
-      }
-
+  private def processor(req: HttpRequest): (ChannelHandlerContext) => Unit = 
+    if (req.getMethod() != HttpMethod.GET) { 
+      val msg = "Unsupporded method"
+      output(_, new DefaultFullHttpResponse(
+	HttpVersion.HTTP_1_1,
+	new HttpResponseStatus(400, msg), 
+	Unpooled.copiedBuffer(msg, CharsetUtil.UTF_8)))
+    } else if (req.headers().contains("Expect", "100-Continue", true))
+      output(_, new DefaultFullHttpResponse(
+	HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE))
+    else {
       val request = Url(req.getUri)
       val toFind = request.vars.get("check").getOrElse("")
       val method = request.vars.get("find").getOrElse("")
@@ -80,31 +86,20 @@ extends ChannelHandlerAdapter
       r.headers().set("Content-Type", SearchParams.contentType(format))
       r.headers().set("Content-Length", response.size.toString)
 
-      ctx.write(r)
-      ctx.flush()
+      output(_, r)
     }
-    case obj @ _ => { }
+
+  private def output(ctx: ChannelHandlerContext, response: HttpResponse) =
+  {
+    ctx.write(response)
+    ctx.flush()
+    ctx.close()
   }
 
   override def exceptionCaught(ctx: ChannelHandlerContext, t: Throwable) =
   {
     t.printStackTrace();
     ctx.close()
-  }
-
-  private def send400(ctx: ChannelHandlerContext, msg: String) = {
-    ctx.write(new DefaultFullHttpResponse(
-      HttpVersion.HTTP_1_1,
-      new HttpResponseStatus(400, msg), 
-      Unpooled.copiedBuffer(msg, CharsetUtil.UTF_8)))
-
-    ctx.flush()
-  }
-
-  private def process100Continue(ctx: ChannelHandlerContext) = {
-    ctx.write(new DefaultFullHttpResponse(
-      HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE))
-    ctx.flush()
   }
 }
 
