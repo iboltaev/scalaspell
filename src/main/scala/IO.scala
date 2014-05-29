@@ -50,21 +50,21 @@ extends ChannelHandlerAdapter
 			   msg: Any): Unit = msg match
   {
     case req: HttpRequest => {
-      processor(req)(ctx)
+      output(ctx, response(req))
     }
     case _ => { }
   }
 
-  private def processor(req: HttpRequest): (ChannelHandlerContext) => Unit = 
+  private def response(req: HttpRequest) = 
     if (req.getMethod() != HttpMethod.GET) { 
       val msg = "Unsupporded method"
-      output(_, new DefaultFullHttpResponse(
+      new DefaultFullHttpResponse(
 	HttpVersion.HTTP_1_1,
 	new HttpResponseStatus(400, msg), 
-	Unpooled.copiedBuffer(msg, CharsetUtil.UTF_8)))
+	Unpooled.copiedBuffer(msg, CharsetUtil.UTF_8))
     } else if (req.headers().contains("Expect", "100-Continue", true))
-      output(_, new DefaultFullHttpResponse(
-	HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE))
+      new DefaultFullHttpResponse(
+	HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE)
     else {
       val request = Url(req.getUri)
       val toFind = request.vars.get("check").getOrElse("")
@@ -74,19 +74,19 @@ extends ChannelHandlerAdapter
       val searcher = nnsearch.SearchParams.searcher(method)
       val serializer = nnsearch.SearchParams.serializer(format)
 
-      val response = 
+      val resp = 
 	if (toFind.isEmpty) ""
 	else compute(toFind, searcher, serializer)
 
       val r = new DefaultFullHttpResponse(
 	HttpVersion.HTTP_1_1, 
 	HttpResponseStatus.OK, 
-	Unpooled.copiedBuffer(response, CharsetUtil.UTF_8))
+	Unpooled.copiedBuffer(resp, CharsetUtil.UTF_8))
 
       r.headers().set("Content-Type", SearchParams.contentType(format))
-      r.headers().set("Content-Length", response.size.toString)
+      r.headers().set("Content-Length", resp.size.toString)
 
-      output(_, r)
+      r
     }
 
   private def output(ctx: ChannelHandlerContext, response: HttpResponse) =
