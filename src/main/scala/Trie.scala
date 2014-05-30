@@ -29,7 +29,7 @@ case class Variant(
   }
 }
 
-  /**
+/**
  * Just immutable trie (also called prefix tree).
  * Capable of running general impresize search in a dictionary
  * (in terms of Levenstein metric).
@@ -51,15 +51,15 @@ class Trie(
       else if (s.length == pos)
 	if (trie.ends) trie
 	else new Trie(true, trie.parent, trie.childs, trie.value)
-	else {
-	  val c = s(pos)
-	  val children = if (trie.childs != null) trie.childs 
-			 else new TreeMap[Char, Trie]()
-	  val child = if (children contains c) children(c) 
-		      else new Trie(s.length() == pos + 1, trie, null, c)
-	  new Trie(trie.ends, trie.parent, 
-		   children + ((c, insert(child, s, pos + 1))), trie.value)
-	}
+      else {
+	val c = s(pos)
+	val children = if (trie.childs != null) trie.childs 
+		       else new TreeMap[Char, Trie]()
+	val child = if (children contains c) children(c) 
+		    else new Trie(s.length() == pos + 1, trie, null, c)
+	new Trie(trie.ends, trie.parent, 
+		 children + ((c, insert(child, s, pos + 1))), trie.value)
+      }
 
     insert(this, s, 0)
   }
