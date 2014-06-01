@@ -9,6 +9,7 @@ import correction.Corrector
 object SearchParams {
   private val kMatch = "(\\d+)".r
   private val dMatch = "d(\\d+)".r
+  private val variantsLimit = 128 * 1024
 
   /// get search object by its string representation
   def searcher(s: String) = {
@@ -19,8 +20,8 @@ object SearchParams {
     }
 
     s match {
-      case kMatch(k) => new NearestSearch.K(intParam(k))
-      case dMatch(d) => new NearestSearch.Delta(intParam(d))
+      case kMatch(k) => new NearestSearch.K(intParam(k), variantsLimit)
+      case dMatch(d) => new NearestSearch.Delta(intParam(d), variantsLimit)
       case _ => new NearestSearch.K(1)
     }
   }

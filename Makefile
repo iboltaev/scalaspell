@@ -39,7 +39,7 @@ $(SPECS): help $(FULLBIN)
 
 run: $(BIN)
 	@echo "Server is up and running ..................."
-	@scala -classpath "$(BINDIR):$(CLASSPATH)" $(CLASS) dict.txt
+	@scala -classpath "$(BINDIR):$(CLASSPATH)" $(CLASS) dict.txt 3535
 
 $(BINDIR):
 	@mkdir -p $(BINDIR)

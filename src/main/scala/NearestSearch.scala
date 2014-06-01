@@ -9,7 +9,7 @@ object NearestSearch {
 
   /// consumer of variants during nearest neighbour searching
   abstract class Consumer {
-    def take(s: String, v: Variant) : Boolean
+    def take(s: String, v: Variant): Boolean
   }
 
   /// an interface for searching object, passed to NearestSearch
@@ -22,10 +22,21 @@ object NearestSearch {
       else Some(v.node.makeString)
   }
 
-  /// search for k nearest neighbours
-  case class K(k: Int) extends Searcher
-  {
-    override def take(toFind: String, v: Variant): Boolean = {
+  /// search variants count limitation
+  trait Bounder extends Consumer {
+    protected val maxCounter: Int // 0 - unlimited
+    private var counter: Int = 0
+
+    abstract override def take(s: String, v: Variant) = {
+      counter += 1
+      if (maxCounter == 0 || counter <= maxCounter) super.take(s, v)
+      else false
+    }
+  }
+
+  abstract class KSearch extends Searcher {
+    val k: Int
+    def take(toFind: String, v: Variant): Boolean = {
       val value = wholeWordMatch(toFind, v).getOrElse("")
       if (value.isEmpty) return true
       buffer += ((value, v.penalty))
@@ -33,10 +44,9 @@ object NearestSearch {
     }
   }
 
-  /// search for neighbours in d-radius sphere
-  case class Delta(d: Int) extends Searcher
-  {
-    override def take(toFind: String, v: Variant): Boolean = {
+  abstract class DSearch extends Searcher {
+    val d: Int
+    def take(toFind: String, v: Variant): Boolean = {
       if (v.penalty >= d) return false
       val value = wholeWordMatch(toFind, v).getOrElse("")
       if (value.isEmpty) return true
@@ -44,6 +54,14 @@ object NearestSearch {
       return true
     }
   }
+  
+  /// search for k nearest neighbours
+  case class K(k: Int, protected val maxCounter: Int = 128 * 1024)
+       extends KSearch with Bounder
+
+  /// search for neighbours in d-radius sphere
+  case class Delta(d: Int, protected val maxCounter: Int = 128 * 1024)
+       extends DSearch with Bounder
 
   /// general search
   def apply(trie: Trie, toFind: String, out : (String, Variant) => Boolean) =
