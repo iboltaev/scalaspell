@@ -5,7 +5,7 @@ import nnsearch.Utils._
 import scala.annotation.tailrec
 
 import scala.collection.immutable.TreeMap
-import scala.collection.immutable.TreeSet
+import scala.collection.immutable.HashSet
 import scala.collection.immutable.Stream
 
 import scala.collection.mutable.StringBuilder
@@ -88,25 +88,34 @@ class Trie(
     helper(this, new StringBuilder)
   }
 
-  private case class Context(val q: TreeSet[Variant], val cache: TreeSet[Variant]) {
+  private case class Context(
+    val q: TreeMap[Int, List[Variant]],
+    val cache: HashSet[Variant])
+  {
     def pop = {
       if (q.isEmpty) ((None, this))
       else {
-        val v = q.firstKey
-        ((Some(v), Context(q - v, cache)))
+        val v = q.head
+        if (v._2.tail != Nil)
+          ((Some(v._2.head), Context(q - v._1 + ((v._1, v._2.tail)), cache)))
+        else
+          ((Some(v._2.head), Context(q - v._1, cache) ))
       }
     }
 
-    def ++(vars: Seq[Variant]) = Context(q ++ vars, cache)
+    def ++(vars: Seq[Variant]) = {
+      val newq = (q /: vars)((q, v) => {
+        if (q contains v.penalty) { val l = q(v.penalty); q - v.penalty + ((v.penalty, v :: l)) }
+        else q + ((v.penalty, v :: Nil))
+      })
+      Context(newq, cache)
+    }
 
     def apply(v: Variant) = cache(v)
     def addCache(v: Variant) = Context(q, cache + v)
   }
 
   def prefixes(toFind: String) : Stream[Variant] = {
-    implicit val ordering: Ordering[Variant] = Ordering by {
-      (v) => (v.penalty, v.pos, v.node.value)}
-
     val init = Variant(0, 0, this)
 
     @tailrec def whileCached(ctx: Context): (Option[Variant], Context) =
@@ -133,7 +142,7 @@ class Trie(
       } else replacePass
     }
 
-    streamGen(Context(TreeSet[Variant]() + init, TreeSet[Variant]()))(
+    streamGen(Context(TreeMap[Int, List[Variant]]() + ((init.penalty, init :: Nil)), HashSet[Variant]()))(
       ctx => { // Option[(Variant, Context)]
         val (best, ctx2) = whileCached(ctx)
         if (best.isEmpty) None

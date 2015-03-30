@@ -40,10 +40,10 @@ package unittest {
       NearestSearch.dNearest(trie, "sacrifice", 2) should contain theSameElementsAs Seq(("sacrifice", 0), ("sacrificed", 1), ("sacrifices", 1))
     }
 
-    it should "corectly process bug with duplocate endings" in {
+    it should "corectly process bug with duplicate endings" in {
       val seq = Seq("sia", "siac", "sic")
       val trie = immutable.Trie(seq)
-      NearestSearch.dNearest(trie, "sia", 2) should contain theSameElementsAs seq
+      NearestSearch.dNearest(trie, "sia", 2) should contain theSameElementsAs Seq(("sia",0), ("siac", 1), ("sic", 1))
     }
 
     it should "support search variants limitation" in {
