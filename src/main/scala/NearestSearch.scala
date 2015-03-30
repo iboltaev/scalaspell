@@ -7,84 +7,37 @@ import scala.collection.immutable.TreeMap
 
 object NearestSearch {
 
-  /// consumer of variants during nearest neighbour searching
-  abstract class Consumer {
-    def take(s: String, v: Variant): Boolean
+  type Searcher = Stream[Variant] => Stream[Variant]
+
+  // we make this 2 case classes to be available to write test
+  case class K(k: Int) extends Searcher {
+    override def apply(s: Stream[Variant]) = s take k
   }
 
-  /// an interface for searching object, passed to NearestSearch
-  trait Searcher extends Consumer {
-    def get(): Seq[(String, Int)] = buffer
-    protected val buffer = ArrayBuffer[(String, Int)]()
-
-    def wholeWordMatch(toFind: String, v: Variant): Option[String] =
-      if (!v.node.ends || toFind.length != v.pos) None
-      else Some(v.node.makeString)
+  case class D(d: Int) extends Searcher {
+    override def apply(s: Stream[Variant]) = s takeWhile (v => v.penalty < d)
   }
 
-  /// search variants count limitation
-  trait Bounder extends Consumer {
-    protected val maxCounter: Int // 0 - unlimited
-    private var counter: Int = 0
+  def apply(trie: Trie, toFind: String, limit: Int = 10000): Seq[(String, Int)] =
+    kNearest(trie, toFind, 1, limit)
 
-    abstract override def take(s: String, v: Variant) = {
-      counter += 1
-      if (maxCounter == 0 || counter <= maxCounter) super.take(s, v)
-      else false
-    }
-  }
-
-  abstract class KSearch extends Searcher {
-    val k: Int
-    def take(toFind: String, v: Variant): Boolean = {
-      val value = wholeWordMatch(toFind, v).getOrElse("")
-      if (value.isEmpty) return true
-      buffer += ((value, v.penalty))
-      return buffer.size < k
-    }
-  }
-
-  abstract class DSearch extends Searcher {
-    val d: Int
-    def take(toFind: String, v: Variant): Boolean = {
-      if (v.penalty >= d) return false
-      val value = wholeWordMatch(toFind, v).getOrElse("")
-      if (value.isEmpty) return true
-      buffer += ((value, v.penalty))
-      return true
-    }
-  }
-  
-  /// search for k nearest neighbours
-  case class K(k: Int, protected val maxCounter: Int = 128 * 1024)
-       extends KSearch with Bounder
-
-  /// search for neighbours in d-radius sphere
-  case class Delta(d: Int, protected val maxCounter: Int = 128 * 1024)
-       extends DSearch with Bounder
-
-  /// general search
-  def apply(trie: Trie, toFind: String, out : (String, Variant) => Boolean) =
-    trie.nearest(toFind, out)
-
-  /// general search v2
-  def apply(trie: Trie, toFind: String, searcher: Searcher) = 
+  def search(
+    trie: Trie,
+    toFind: String,
+    searcher: Searcher,
+    limit: Int = 10000): Seq[(String, Int)] =
   {
-    trie.nearest(toFind, searcher.take)
-    searcher.get()
+    searcher(
+      trie prefixes toFind take limit filter (
+        v => v.node.ends && v.pos == toFind.length)) map (
+      v => ((v.node makeString, v.penalty)))
   }
 
-  /// search for 1 nearest
-  def apply(trie: Trie, toFind: String): Seq[(String, Int)] = 
-    apply(trie, toFind, new K(1))
+  def kNearest(trie: Trie, toFind: String, k: Int, limit: Int = 10000) =
+    search(trie, toFind, K(k), limit)
 
-  /// search for k nearest
-  def kNearest(trie: Trie, toFind: String, k: Int) = 
-    apply(trie, toFind, new K(k))
-
-  /// search for neighbours in radius [0, d)
-  def dNearest(trie: Trie, toFind: String, d: Int) =
-    apply(trie, toFind, new Delta(d))
+  def dNearest(trie: Trie, toFind: String, d: Int, limit: Int = 10000) =
+    search(trie, toFind, D(d), limit)
 }
 
 } // !package nnsearch

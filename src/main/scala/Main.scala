@@ -21,12 +21,14 @@ import nnsearch.search._
 import scala.collection.mutable.ArrayBuffer
 
 object Program {
+  private val variantsLimit = 128 * 1024
+
   def processor(
     method: NearestSearch.Searcher,
     format: Serializer.Serializer) = 
   {
     (dictionary: Trie, toFind: String) => format(
-      NearestSearch(dictionary, toFind, method) map {
+      NearestSearch.search(dictionary, toFind, method, variantsLimit) map {
 	(pair: (String, Int)) => Corrector.correct(toFind, pair._1, pair._2)
       })
   }

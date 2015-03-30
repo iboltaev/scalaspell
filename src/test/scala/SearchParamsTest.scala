@@ -16,7 +16,7 @@ import nnsearch.search.NearestSearch
 
     it should "parse d128" in {
       SearchParams.searcher("d128") should be (
-	NearestSearch.Delta(128))
+	NearestSearch.D(128))
     }
 
     it should "parse abc100500def" in {

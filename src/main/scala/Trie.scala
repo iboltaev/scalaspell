@@ -1,12 +1,13 @@
-// nnsearch.collections.immutable
-package nnsearch.collections.immutable {
+package nnsearch.collections.immutable
+
+import nnsearch.Utils._
 
 import scala.annotation.tailrec
 
 import scala.collection.immutable.TreeMap
+import scala.collection.immutable.TreeSet
+import scala.collection.immutable.Stream
 
-import scala.collection.mutable.HashSet
-import scala.collection.mutable.PriorityQueue
 import scala.collection.mutable.StringBuilder
 
 import scala.util.Sorting
@@ -42,7 +43,7 @@ class Trie(
   val ends: Boolean = false, // whether this node is end of some string
   private val parent: Trie = null,
   private val childs : TreeMap[Char, Trie] = null,
-  private val value : Char = 0x0)
+  val value : Char = 0x0)
 {
   def +(s: String) = {
     def insert(trie: Trie, s: String, pos: Int = 0) : Trie = 
@@ -87,89 +88,60 @@ class Trie(
     helper(this, new StringBuilder)
   }
 
-  /// nearest search with Levenstein metric; breaks if "consume" is false
-  def nearest(
-    str: String,
-    consume : (String, Variant) => Boolean): Unit = 
-  {
-    // lower penalty and greater pos first
-    val q = PriorityQueue[Variant]()(Ordering by {
-      (v) => (-v.penalty, v.pos)})
-
-    val cache = HashSet[Variant]()
-    val processed = HashSet[Variant]()
-
-    def checkAdd(v: Variant) = {
-      if (cache.contains(v) == false) {
-	cache += v
-	q += v
+  private case class Context(val q: TreeSet[Variant], val cache: TreeSet[Variant]) {
+    def pop = {
+      if (q.isEmpty) ((None, this))
+      else {
+        val v = q.firstKey
+        ((Some(v), Context(q - v, cache)))
       }
     }
 
-    def genvars(str: String, best: Variant) = {
-      // eat symbol
-      if (best.pos != str.length)
-	checkAdd(Variant(best.penalty + 1, best.pos + 1, best.node))
+    def ++(vars: Seq[Variant]) = Context(q ++ vars, cache)
 
-      if (best.node.childs != null) {
-	for ((key, child) <- best.node.childs) {
-	  // symbol replacement
-	  if (best.pos != str.length && str(best.pos) != key)
-	    checkAdd(Variant(best.penalty + 1,
-			 best.pos + 1,
-			 child))
+    def apply(v: Variant) = cache(v)
+    def addCache(v: Variant) = Context(q, cache + v)
+  }
 
-	  // pass symbol
-	  checkAdd(Variant(best.penalty + 1, best.pos, child))
-	}
-      }
-    }
+  def prefixes(toFind: String) : Stream[Variant] = {
+    implicit val ordering: Ordering[Variant] = Ordering by {
+      (v) => (v.penalty, v.pos, v.node.value)}
 
-    def indeep(toFind: String,
-	       variant: Variant,
-	       consume: (String, Variant) => Boolean): Boolean = 
+    val init = Variant(0, 0, this)
+
+    @tailrec def whileCached(ctx: Context): (Option[Variant], Context) =
     {
-      if (variant.node == null || 
-	  toFind.length < variant.pos ||
-	  {processed contains variant})
-	return false
-
-      processed += variant
-
-      if (!consume(toFind, variant))
-	return true
-
-      if (toFind.length == variant.pos) {
-	genvars(toFind, variant)
-	return false
-      }
-
-      val c = toFind(variant.pos)
-      if (variant.node.childs != null &&
-	  variant.node.childs.contains(c)) 
-      {
-	val v = Variant(variant.penalty, variant.pos + 1,
-			variant.node.childs(c))
-	if (indeep(toFind, v, consume))
-	  return true
-      }
-
-      genvars(toFind, variant)
-
-      return false
+      val (v, ctx2) = ctx.pop
+      if (v.isEmpty) ((v, ctx2))
+      else if (!ctx2(v.get)) ((Some(v.get), ctx2))
+      else whileCached(ctx2)
     }
 
-    @tailrec def search(): Unit = {
-      if (q.isEmpty == false) {
-	val best = q.dequeue()
-	if (!indeep(str, best, consume))
-	  search
-      }
+    def genvars(v: Variant): List[Variant] = {
+      val replacePass: List[Variant] = 
+        if (v.node.childs == null) Nil
+        else v.node.childs.toList flatMap(pair => {
+          val (key, child) = pair
+          val pass = Variant(v.penalty + 1, v.pos, child) :: Nil
+          if (v.pos < toFind.length)
+            Variant(v.penalty + {if (toFind(v.pos) == key) 0 else 1}, v.pos + 1, child) :: pass
+          else pass
+        })
+
+      if (v.pos != toFind.length) {
+        Variant(v.penalty + 1, v.pos + 1, v.node) :: replacePass
+      } else replacePass
     }
 
-    val start = Variant(0, 0, this)
-    checkAdd(start)
-    search
+    streamGen(Context(TreeSet[Variant]() + init, TreeSet[Variant]()))(
+      ctx => { // Option[(Variant, Context)]
+        val (best, ctx2) = whileCached(ctx)
+        if (best.isEmpty) None
+        else {
+          val vars = genvars(best.get)
+          Some(( best.get, (ctx2 ++ vars).addCache(best.get) ))
+        }
+      })
   }
 }
 
@@ -179,5 +151,3 @@ object Trie {
 
   def apply(seq: Seq[String]) : Trie = apply(seq.iterator)
 }
-
-} // !package nnsearch.collections.immutable

@@ -40,14 +40,18 @@ package unittest {
       NearestSearch.dNearest(trie, "sacrifice", 2) should contain theSameElementsAs Seq(("sacrifice", 0), ("sacrificed", 1), ("sacrifices", 1))
     }
 
+    it should "corectly process bug with duplocate endings" in {
+      val seq = Seq("sia", "siac", "sic")
+      val trie = immutable.Trie(seq)
+      NearestSearch.dNearest(trie, "sia", 2) should contain theSameElementsAs seq
+    }
+
     it should "support search variants limitation" in {
-      val maxCounter = 1024
-      val searcher = NearestSearch.K(1, maxCounter)
-      val v = immutable.Variant(0, 0, immutable.Trie(Seq("123", "456")))
-      var counter = 0
-      while (searcher.take("", v)) counter += 1
-      
-      counter should be (maxCounter)
+      val maxCounter = 16
+      val searcher = NearestSearch.K(1)
+      val trie = immutable.Trie(Seq("111", "1111", "222", "333"))
+      // without limits, this delta-request should return 3 values
+      NearestSearch.dNearest(trie, "112", 3, maxCounter) should contain theSameElementsAs Seq(("111", 1))
     }
   }
 }
