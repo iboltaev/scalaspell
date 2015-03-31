@@ -51,7 +51,7 @@ package unittest {
       val searcher = NearestSearch.K(1)
       val trie = immutable.Trie(Seq("111", "1111", "222", "333"))
       // without limits, this delta-request should return 3 values
-      NearestSearch.dNearest(trie, "112", 3, maxCounter) should contain theSameElementsAs Seq(("111", 1))
+      NearestSearch.dNearest(trie, "112", 3, maxCounter) should contain theSameElementsAs Seq(("111", 1), ("1111", 2))
     }
   }
 }

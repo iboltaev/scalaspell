@@ -88,33 +88,55 @@ class Trie(
     helper(this, new StringBuilder)
   }
 
-  private case class Context(
-    val q: TreeMap[Int, List[Variant]],
+  /**
+    * Immutable nearest search variants priority queue with cache;
+    * TODO: make new class instead of TreeMap[(Int, Int), List[Variant]] usage
+    */
+  private class Context(
+    val q: TreeMap[(Int, Int), List[Variant]],
     val cache: HashSet[Variant])
   {
     def pop = {
       if (q.isEmpty) ((None, this))
       else {
-        val v = q.head
-        if (v._2.tail != Nil)
-          ((Some(v._2.head), Context(q - v._1 + ((v._1, v._2.tail)), cache)))
+        val (key, list) = q.head
+        if (list.tail != Nil)
+          ((Some(list.head), new Context(q - key + ((key, list.tail)), cache)))
         else
-          ((Some(v._2.head), Context(q - v._1, cache) ))
+          ((Some(list.head), new Context(q - key, cache) ))
       }
     }
 
     def ++(vars: Seq[Variant]) = {
       val newq = (q /: vars)((q, v) => {
-        if (q contains v.penalty) { val l = q(v.penalty); q - v.penalty + ((v.penalty, v :: l)) }
-        else q + ((v.penalty, v :: Nil))
+        val key = ((v.penalty, v.pos))
+        if (q contains key) { val l = q(key); q - key + ((key, v :: l)) }
+        else q + ((key, v :: Nil))
       })
-      Context(newq, cache)
+      new Context(newq, cache)
     }
 
     def apply(v: Variant) = cache(v)
-    def addCache(v: Variant) = Context(q, cache + v)
+    def addCache(v: Variant) = new Context(q, cache + v)
   }
 
+  private object Context {
+    def apply(init: Variant) = {
+      val ordering = new Ordering[(Int, Int)] {
+        def compare(v1: (Int, Int), v2: (Int, Int)) =
+          if (v1._1 == v2._1) v2._2 - v1._2 else v1._1 - v2._1
+      }
+
+      new Context(
+        TreeMap( ((((init.penalty, init.pos)), init :: Nil)) )(ordering),
+        HashSet[Variant]())
+    }
+  }
+
+  /**
+    * Generates stream of trie nodes, matching some prefix of 'toFind' with
+    * minimal penalty of symbol mismatch (inserting, replacing or removing)
+    */
   def prefixes(toFind: String) : Stream[Variant] = {
     val init = Variant(0, 0, this)
 
@@ -142,7 +164,7 @@ class Trie(
       } else replacePass
     }
 
-    streamGen(Context(TreeMap[Int, List[Variant]]() + ((init.penalty, init :: Nil)), HashSet[Variant]()))(
+    streamGen(Context(init))(
       ctx => { // Option[(Variant, Context)]
         val (best, ctx2) = whileCached(ctx)
         if (best.isEmpty) None
