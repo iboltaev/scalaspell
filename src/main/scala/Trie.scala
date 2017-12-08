@@ -69,7 +69,7 @@ class Trie(
   def contains(s: String) = {
     @tailrec def impl(t: Trie, s: String, pos: Int): Boolean =
       if (s.length < pos) false
-      else if (s.length == pos) true
+      else if (s.length == pos) t.ends
       else if (t.childs == null) false
       else if (t.childs.contains(s(pos)) == false) false
       else impl(t.childs(s(pos)), s, pos + 1)
