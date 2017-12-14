@@ -108,7 +108,7 @@ class Trie(
     }
 
     def ++(vars: Seq[Variant]) = {
-      val newq = (q /: vars)((q, v) => {
+      val newq = (q /: vars.filterNot(cache.contains))((q, v) => {
         val key = ((v.penalty, v.pos))
         if (q contains key) { val l = q(key); q - key + ((key, v :: l)) }
         else q + ((key, v :: Nil))
